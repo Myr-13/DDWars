@@ -2360,5 +2360,5 @@ void CCharacter::Rescue()
 }
 
 void CCharacter::SetNPCType(int type) {
-	ai_shop = new CShopNPC(this);
+	ai = new CShopNPC(this);
 }

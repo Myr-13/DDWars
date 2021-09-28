@@ -7,6 +7,8 @@
 #include <game/server/entity.h>
 #include <game/server/save.h>
 
+#include "npc/shop.h"
+
 class CAntibot;
 class CGameTeams;
 struct CAntibotCharacterData;
@@ -268,9 +270,12 @@ public:
 	bool HasTelegunGrenade() { return m_Core.m_HasTelegunGrenade; };
 	bool HasTelegunLaser() { return m_Core.m_HasTelegunLaser; };
 
+	CNetObj_PlayerInput *Input() { return &m_Input; }
+
+private:
 	void SetNPCType(int type);
 
-	CShopNPC ai_shop;
+	CShopNPC *ai;
 };
 
 enum
