@@ -28,6 +28,8 @@
 #include "player.h"
 #include "score.h"
 
+#include <fstream>
+
 enum
 {
 	RESET,
@@ -471,10 +473,10 @@ void CGameContext::SendWeaponPickup(int ClientID, int Weapon)
 	Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ClientID);
 }
 
-void CGameContext::SendMotd(int ClientID)
+void CGameContext::SendMotd(int ClientID, const char *pText)
 {
 	CNetMsg_Sv_Motd Msg;
-	Msg.m_pMessage = g_Config.m_SvMotd;
+	Msg.m_pMessage = pText;
 	Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ClientID);
 }
 
@@ -4168,6 +4170,7 @@ bool CGameContext::RateLimitPlayerMapVote(int ClientID)
 	return false;
 }
 
+// DDWars Main
 int CGameContext::GetNextClientID()
 {
 	for(int i = 0; i < Config()->m_SvMaxClients; i++)
@@ -4176,7 +4179,48 @@ int CGameContext::GetNextClientID()
 	return -1;
 }
 
-void CGameContext::SpawnNPC(int NPC_type, vec2 pos) {
+void CGameContext::DDWarsTick()
+{
+	for(CPlayer *player : m_apPlayers)
+	{
+		if(!player)
+			continue;
+
+		CCharacter *chr = player->GetCharacter();
+		if(!chr)
+			continue;
+
+		vec2 pos = chr->m_Pos;
+
+		CCollision *col = Collision();
+		if(col->GetTileIndex(col->GetPureMapIndex(pos.x, pos.y)) == 177)
+		{
+			if(!player->inShop)
+			{
+				SendChatTarget(player->GetCID(), "Robert: Hello, I Robert, if you want open shop, say /shop");
+				player->inShop = 1;
+			}
+		}
+		else if(player->inShop)
+		{
+			SendChatTarget(player->GetCID(), "Robert: Bay!");
+			player->inShop = 0;
+		}
+	}
+
+	// Scoreboard
+	for(CPlayer *player : m_apPlayers)
+	{
+		if(!player)
+			continue;
+
+		if(player->isLoginon)
+			Server()->SetClientScore(player->GetCID(), player->m_aAccount->lvl);
+	}
+}
+
+void CGameContext::SpawnNPC(int NPC_type, vec2 pos)
+{
 	int NpcID = GetNextClientID();
 	if(NpcID < 0 || NpcID >= MAX_CLIENTS || m_apPlayers[NpcID])
 		return;
@@ -4190,15 +4234,184 @@ void CGameContext::SpawnNPC(int NPC_type, vec2 pos) {
 	OnClientEnter(NpcID);
 	Server()->SpawnNPC(NpcID);
 	Npc->ForceSpawn(pos);
-
-	if(!Npc->GetCharacter())
-		return;
+	Npc->SetNPCType(0);
 
 	dbg_msg("npc", "NPC Connected: %d, NPC-Type: %d", NpcID, NPC_type);
 }
 
-void CGameContext::ConSpawnNPC(IConsole::IResult *pResult, void *pUserData) {
+void CGameContext::ConSpawnNPC(IConsole::IResult *pResult, void *pUserData)
+{
 	CGameContext *self = (CGameContext *)pUserData;
-	
-	self->SpawnNPC(NPC_SHOP, vec2(138 * 32, 116 * 32));
+
+	self->SpawnNPC(NPC_SHOP, vec2(548 * 32, 168 * 32));
+}
+
+Account *CGameContext::GetAccount(const char *pName)
+{
+	Account *acc;
+
+	for(int i = 0; i < m_pAccounts.size(); i++)
+	{
+		acc = m_pAccounts[i];
+
+		if(acc)
+			if(str_comp(acc->name, pName) == 0)
+				return acc;
+	}
+
+	return acc;
+}
+
+int CGameContext::GetAccountID(Account *pAccount)
+{
+	int accID = -1;
+
+	for(int i = 0; i < m_pAccounts.size(); i++)
+	{
+		Account *acc = m_pAccounts[i];
+
+		if(pAccount == acc)
+		{
+			accID = i;
+			break;
+		}
+	}
+
+	return accID;
+}
+
+void CGameContext::CreateNewAccount(const char *pName, const char *pPassword)
+{
+	Account *acc = new Account(pName, pPassword);
+
+	m_pAccounts.push_back(acc);
+
+	SaveAccount(m_pAccounts.size());
+}
+
+void CGameContext::LoginToAccount(const int pClientID, const char *pName, const char *pPassword)
+{
+	Account *acc = GetAccount(pName);
+	if(!acc)
+		return;
+
+	int CID = GetAccountID(acc);
+
+	if(str_comp(acc->password, pPassword) == 0)
+	{
+		LoadAccount(CID + 1, pName);
+
+		m_apPlayers[pClientID]->m_aAccount = acc;
+		m_apPlayers[pClientID]->isLoginon = true;
+
+		SendChatTarget(pClientID, "Welcome!");
+
+		dbg_msg("accounts", "%d login to account: %s", pClientID, pName);
+	}
+	else
+	{
+		SendChatTarget(pClientID, "Incorect password!");
+	}
+}
+
+const char *CGameContext::GetAccVar(int CID, int var)
+{
+	Account *acc = m_pAccounts[CID - 1];
+	char aBuf[512];
+
+	switch(var)
+	{
+	case ACC_VAR_MAX_HEALTH: str_format(aBuf, 512, "%i", acc->max_hp); break;
+	case ACC_VAR_MAX_ARMOR: str_format(aBuf, 512, "%i", acc->max_armor); break;
+	case ACC_VAR_DAMAGE: str_format(aBuf, 512, "%i", acc->damage); break;
+	case ACC_VAR_FIRE_SPEED: str_format(aBuf, 512, "%i", acc->fire_speed); break;
+	case ACC_VAR_HACK_SPEED: str_format(aBuf, 512, "%i", acc->hack_speed); break;
+	case ACC_VAR_REGEN: str_format(aBuf, 512, "%i", acc->regen); break;
+
+	case ACC_VAR_RPG: str_format(aBuf, 512, "%i", (int)acc->RPG); break;
+	case ACC_VAR_MINIGUN: str_format(aBuf, 512, "%i", (int)acc->Minigun); break;
+
+	case ACC_VAR_GRENADE_SPAWN: str_format(aBuf, 512, "%i", (int)acc->Grenade); break;
+	case ACC_VAR_SHOTGUN_SPAWN: str_format(aBuf, 512, "%i", (int)acc->Shotgun); break;
+	case ACC_VAR_JETPACK_SPAWN: str_format(aBuf, 512, "%i", (int)acc->Jetpack); break;
+	case ACC_VAR_DASH: str_format(aBuf, 512, "%i", (int)acc->Dash); break;
+
+	case ACC_VAR_KILLS: str_format(aBuf, 512, "%i", acc->kills); break;
+	case ACC_VAR_MONEY: str_format(aBuf, 512, "%i", acc->money); break;
+	case ACC_VAR_LEVEL: str_format(aBuf, 512, "%i", acc->lvl); break;
+	case ACC_VAR_XP: str_format(aBuf, 512, "%i", acc->xp); break;
+	case ACC_VAR_XP_TO_LEVEL: str_format(aBuf, 512, "%i", acc->xp_to_lvl); break;
+	case ACC_VAR_TOKENS: str_format(aBuf, 512, "%i", acc->tokens); break;
+
+	case ACC_VAR_USERNAME: str_format(aBuf, 512, "%s", acc->name); break;
+	case ACC_VAR_PASSWORD: str_format(aBuf, 512, "%s", acc->password); break;
+	}
+
+	return aBuf;
+}
+
+void CGameContext::SetAccVar(int CID, int var, const char *pData)
+{
+	Account *acc = m_pAccounts[CID - 1];
+
+	switch(var)
+	{
+	case ACC_VAR_MAX_HEALTH: acc->max_hp = atoi(pData); break;
+	case ACC_VAR_MAX_ARMOR: acc->max_armor = atoi(pData); break;
+	case ACC_VAR_DAMAGE: acc->damage = atoi(pData); break;
+	case ACC_VAR_FIRE_SPEED: acc->fire_speed = atoi(pData); break;
+	case ACC_VAR_HACK_SPEED: acc->hack_speed = atoi(pData); break;
+	case ACC_VAR_REGEN: acc->regen = atoi(pData); break;
+
+	case ACC_VAR_RPG: acc->RPG = atoi(pData); break;
+	case ACC_VAR_MINIGUN: acc->Minigun = atoi(pData); break;
+
+	case ACC_VAR_GRENADE_SPAWN: acc->Grenade = atoi(pData); break;
+	case ACC_VAR_SHOTGUN_SPAWN: acc->Shotgun = atoi(pData); break;
+	case ACC_VAR_JETPACK_SPAWN: acc->Jetpack = atoi(pData); break;
+	case ACC_VAR_DASH: acc->Dash = atoi(pData); break;
+
+	case ACC_VAR_KILLS: acc->kills = atoi(pData); break;
+	case ACC_VAR_MONEY: acc->money = atoi(pData); break;
+	case ACC_VAR_LEVEL: acc->lvl = atoi(pData); break;
+	case ACC_VAR_XP: acc->xp = atoi(pData); break;
+	case ACC_VAR_XP_TO_LEVEL: acc->xp_to_lvl = atoi(pData); break;
+	case ACC_VAR_TOKENS: acc->tokens = atoi(pData); break;
+
+	case ACC_VAR_USERNAME: str_copy(acc->name, pData, 64); break;
+	case ACC_VAR_PASSWORD: str_copy(acc->password, pData, 64); break;
+	}
+}
+
+void CGameContext::SaveAccount(int CID)
+{
+	std::string data;
+	char aBuf[128];
+	str_format(aBuf, sizeof(aBuf), "accounts/%s.acc", m_pAccounts[CID - 1]->name);
+	std::ofstream AccFile(aBuf);
+
+	if(AccFile.is_open())
+	{
+		for(int i = 0; i < 20; i++)
+		{
+			AccFile << GetAccVar(CID, i) << "\n";
+		}
+		dbg_msg("accounts", "saved account %s", m_pAccounts[CID - 1]->name);
+	}
+	AccFile.close();
+}
+
+void CGameContext::LoadAccount(int CID, const char *pName)
+{
+	std::string data;
+	char aBuf[128];
+	str_format(aBuf, sizeof(aBuf), "accounts/%s.acc", pName);
+	std::fstream AccFile(aBuf);
+
+	for(int i = 0; i < 20; i++)
+	{
+		getline(AccFile, data);
+		const char *pData = data.c_str();
+		SetAccVar(CID, i, pData);
+	}
 }

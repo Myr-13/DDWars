@@ -19,6 +19,8 @@
 #include "gameworld.h"
 #include "teehistorian.h"
 
+#include "accounts.h"
+
 #include <memory>
 
 /*
@@ -220,7 +222,7 @@ public:
 	void SendChat(int ClientID, int Team, const char *pText, int SpamProtectionClientID = -1, int Flags = CHAT_SIX | CHAT_SIXUP);
 	void SendEmoticon(int ClientID, int Emoticon);
 	void SendWeaponPickup(int ClientID, int Weapon);
-	void SendMotd(int ClientID);
+	void SendMotd(int ClientID, const char *pText = "");
 	void SendSettings(int ClientID);
 	void SendBroadcast(const char *pText, int ClientID, bool IsImportant = true);
 
@@ -470,6 +472,28 @@ public:
 
 	int GetNextClientID();
 	void SpawnNPC(int NPC_type, vec2 pos);
+
+	void DDWarsTick();
+	void DDWarsInit();
+
+	Account *GetAccount(const char *pName);
+	int GetAccountID(Account *pAccount);
+
+	void CreateNewAccount(const char *pName, const char *pPassword);
+	void LoginToAccount(const int pClientID, const char *pName, const char *pPassword);
+
+	void SaveAccount(int CID);
+	void LoadAccount(int CID, const char *pName);
+
+	const char *GetAccVar(int CID, int var);
+	void SetAccVar(int CID, int var, const char *pData);
+
+private:
+	std::vector<Account *> m_pAccounts;
+
+	static void ChatOpenShop(IConsole::IResult *pResult, void *pUserData);
+	static void ChatAccountLogin(IConsole::IResult *pResult, void *pUserData);
+	static void ChatAccountRegister(IConsole::IResult *pResult, void *pUserData);
 
 private:
 	static void ConSpawnNPC(IConsole::IResult *pResult, void *pUserData);
