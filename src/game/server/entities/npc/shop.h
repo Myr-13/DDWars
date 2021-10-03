@@ -5,6 +5,8 @@
 class CShopNPC
 {
 	CCharacter *m_pCharacter;
+	CGameContext *m_pGameServer;
+	CPlayer *m_pPlayer;
 
 	enum
 	{
@@ -15,8 +17,10 @@ class CShopNPC
 
 	void Aim(vec2 pos);
 
-public:
-	CShopNPC(CCharacter *chr);
+	int64 time = time_get();
 
-	virtual void Tick();
+public:
+	CShopNPC(CCharacter *chr, CGameContext *srv, CPlayer *ply);
+
+	void Tick();
 };

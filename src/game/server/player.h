@@ -214,6 +214,16 @@ public:
 
 	bool isNPC = 0;
 	void SetNPCType(int type);
+
+	bool inShop = 0;
+	bool shopOpen = 0;
+	struct ShopInfo
+	{
+		int m_Page;
+	} m_ShopInfo;
+
+	struct Account *m_aAccount;
+	bool isLoginon = false;
 };
 
 #endif

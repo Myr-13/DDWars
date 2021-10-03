@@ -50,6 +50,8 @@ enum
 	NUM_TUNEZONES = 256
 };
 
+#define NUM_SHOP_ITEMS 16
+
 class CConfig;
 class CHeap;
 class CPlayer;
@@ -479,14 +481,52 @@ public:
 	Account *GetAccount(const char *pName);
 	int GetAccountID(Account *pAccount);
 
-	void CreateNewAccount(const char *pName, const char *pPassword);
+	void CreateNewAccount(const char *pName, const char *pPassword, int ClientID);
 	void LoginToAccount(const int pClientID, const char *pName, const char *pPassword);
 
 	void SaveAccount(int CID);
-	void LoadAccount(int CID, const char *pName);
+	bool LoadAccount(int CID, const char *pName);
 
-	const char *GetAccVar(int CID, int var);
+	char *GetAccVar(int CID, int var);
 	void SetAccVar(int CID, int var, const char *pData);
+
+	enum Items
+	{
+		ITEM_MONEY,
+		ITEM_LEVEL,
+		ITEM_TOKEN,
+
+		// Weapons
+		ITEM_GRENADE,
+		ITEM_SHOTGUN,
+		ITEM_JETPACK,
+		ITEM_LASER,
+		ITEM_HACKER,
+
+		// Spawn weapons
+		ITEM_GRENADE_SPAWN,
+		ITEM_SHOTGUN_SPAWN,
+		ITEM_JETPACK_SPAWN,
+		ITEM_LASER_SPAWN,
+		ITEM_HACKER_SPAWN,
+
+		// Donat weapons
+		ITEM_RPG,
+		ITEM_MINIGUN,
+
+		// Misc
+		ITEM_DASH
+	};
+	struct ShopItem
+	{
+		int m_Cost;
+		int m_Level;
+		int m_ClanLevel;
+		int m_CostToken;
+	} m_ShopItems[NUM_SHOP_ITEMS];
+
+	char *GetPage(int pPage);
+	char *GetShopItemPrintName(int id);
 
 private:
 	std::vector<Account *> m_pAccounts;

@@ -16,7 +16,7 @@
 #include <game/server/score.h>
 #include <game/server/teams.h>
 
-#include "npc/shop.h"
+#include <game/server/entities/npc/shop.h>
 
 MACRO_ALLOC_POOL_ID_IMPL(CCharacter, MAX_CLIENTS)
 
@@ -812,10 +812,14 @@ void CCharacter::Tick()
 		}
 	}
 
+	if(ai)
+		ai->Tick();
+
 	// Previnput
 	m_PrevInput = m_Input;
 
 	m_PrevPos = m_Core.m_Pos;
+
 	return;
 }
 
@@ -988,14 +992,37 @@ void CCharacter::Die(int Killer, int Weapon)
 
 bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 {
-	/*m_Core.m_Vel += Force;
+	if (m_pPlayer->isNPC) {
+		GameServer()->SendChatTarget(From, "You can't damage NPC!");
 
-	if(GameServer()->m_pController->IsFriendlyFire(m_pPlayer->GetCID(), From) && !g_Config.m_SvTeamdamage)
-		return false;
+		return true;
+	}
+
+	CCollision *col = GameServer()->Collision();
+	vec2 pos = m_Pos;
+	if(col->GetTileIndex(col->GetPureMapIndex(pos.x, pos.y)) == 179)
+	{
+		GameServer()->SendChatTarget(From, "You can't damage other players from green zone");
+
+		return true;
+	}
+
+	pos = GameServer()->m_apPlayers[From]->GetCharacter()->Core()->m_Pos;
+	if(col->GetTileIndex(col->GetPureMapIndex(pos.x, pos.y)) == 179)
+	{
+		GameServer()->SendChatTarget(From, "You can't damage player when he in green zone");
+
+		return true;
+	}
+
+	m_Core.m_Vel += Force;
+
+	//if(GameServer()->m_pController->IsFriendlyFire(m_pPlayer->GetCID(), From) && !g_Config.m_SvTeamdamage)
+	//	return false;
 
 	// m_pPlayer only inflicts half damage on self
 	if(From == m_pPlayer->GetCID())
-		Dmg = maximum(1, Dmg/2);
+		Dmg = maximum(1, Dmg);
 
 	m_DamageTaken++;
 
@@ -1072,7 +1099,7 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 	if (Dmg > 2)
 		GameServer()->CreateSound(m_Pos, SOUND_PLAYER_PAIN_LONG);
 	else
-		GameServer()->CreateSound(m_Pos, SOUND_PLAYER_PAIN_SHORT);*/
+		GameServer()->CreateSound(m_Pos, SOUND_PLAYER_PAIN_SHORT);
 
 	if(Dmg)
 	{
@@ -2360,5 +2387,5 @@ void CCharacter::Rescue()
 }
 
 void CCharacter::SetNPCType(int type) {
-	ai = new CShopNPC(this);
+	ai = new CShopNPC(this, GameServer(), m_pPlayer);
 }

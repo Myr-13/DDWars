@@ -1532,3 +1532,40 @@ void CGameContext::ConTopPoints(IConsole::IResult *pResult, void *pUserData)
 	else
 		pSelf->Score()->ShowTopPoints(pResult->m_ClientID);
 }
+
+void CGameContext::ChatAccountRegister(IConsole::IResult *pResult, void *pUserData)
+{
+	CGameContext *pSelf = (CGameContext *)pUserData;
+	if(!CheckClientID(pResult->m_ClientID))
+		return;
+
+	if (str_comp(pResult->GetString(1), pResult->GetString(2)) != 0) {
+		pSelf->SendChatTarget(pResult->m_ClientID, "Password1 (pass1) not equals Password2 (pass2)");
+		return;
+	}
+
+	pSelf->CreateNewAccount(pResult->GetString(0), pResult->GetString(1), pResult->m_ClientID);
+}
+
+void CGameContext::ChatAccountLogin(IConsole::IResult *pResult, void *pUserData)
+{
+	CGameContext *pSelf = (CGameContext *)pUserData;
+	if(!CheckClientID(pResult->m_ClientID))
+		return;
+
+	pSelf->LoginToAccount(pResult->m_ClientID, pResult->GetString(0), pResult->GetString(1));
+}
+
+void CGameContext::ChatOpenShop(IConsole::IResult *pResult, void *pUserData)
+{
+	CGameContext *pSelf = (CGameContext *)pUserData;
+	if(!CheckClientID(pResult->m_ClientID))
+		return;
+
+	CPlayer *player = pSelf->m_apPlayers[pResult->m_ClientID];
+	int id = pResult->m_ClientID;
+
+	if (!player->inShop) {
+		player->shopOpen |= 1;
+	}
+}

@@ -7,7 +7,7 @@
 #include <game/server/entity.h>
 #include <game/server/save.h>
 
-#include "npc/shop.h"
+#include <game/server/entities/npc/shop.h>
 
 class CAntibot;
 class CGameTeams;
@@ -271,11 +271,11 @@ public:
 	bool HasTelegunLaser() { return m_Core.m_HasTelegunLaser; };
 
 	CNetObj_PlayerInput *Input() { return &m_Input; }
-
-private:
+	CNetObj_PlayerInput *LatestInput() { return &m_LatestInput; }
 	void SetNPCType(int type);
 
-	CShopNPC *ai;
+private:
+	class CShopNPC* ai;
 };
 
 enum

@@ -82,11 +82,11 @@ void CGameContext::ConKillPlayer(IConsole::IResult *pResult, void *pUserData)
 	if(pSelf->m_apPlayers[Victim])
 	{
 		pSelf->m_apPlayers[Victim]->KillCharacter(WEAPON_GAME);
-		char aBuf[512];
-		str_format(aBuf, sizeof(aBuf), "%s was killed by %s",
-			pSelf->Server()->ClientName(Victim),
-			pSelf->Server()->ClientName(pResult->m_ClientID));
-		pSelf->SendChat(-1, CGameContext::CHAT_ALL, aBuf);
+		//char aBuf[512];
+		//str_format(aBuf, sizeof(aBuf), "%s was killed by %s",
+		//	pSelf->Server()->ClientName(Victim),
+		//	pSelf->Server()->ClientName(pResult->m_ClientID));
+		//pSelf->SendChat(-1, CGameContext::CHAT_ALL, aBuf);
 	}
 }
 
