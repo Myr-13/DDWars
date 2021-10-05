@@ -63,7 +63,11 @@ CHAT_COMMAND("rescue", "", CFGFLAG_CHAT | CFGFLAG_SERVER, ConRescue, this, "Tele
 CHAT_COMMAND("kill", "", CFGFLAG_CHAT | CFGFLAG_SERVER, ConProtectedKill, this, "Kill yourself when kill-protected during a long game (use f1, kill for regular kill)")
 
 CHAT_COMMAND("shop", "", CFGFLAG_CHAT | CFGFLAG_SERVER, ChatOpenShop, this, "Open shop...")
+CHAT_COMMAND("logout", "", CFGFLAG_CHAT | CFGFLAG_SERVER, ChatLogout, this, "Logout from account")
 CHAT_COMMAND("login", "s[name] s[pass]", CFGFLAG_CHAT | CFGFLAG_SERVER, ChatAccountLogin, this, "Login to account")
 CHAT_COMMAND("register", "s[name] s[pass1] s[pass2]", CFGFLAG_CHAT | CFGFLAG_SERVER, ChatAccountRegister, this, "Register new account")
+CHAT_COMMAND("afk", "", CFGFLAG_CHAT | CFGFLAG_SERVER, ChatAFK, this, "Teleport you to AFK room")
+CHAT_COMMAND("setaccvar", "s[name] i[var] s[val]", CFGFLAG_CHAT | CFGFLAG_SERVER, ChatSetAccVar, this, "Set account var")
+CHAT_COMMAND("getaccvar", "s[name] i[var]", CFGFLAG_CHAT | CFGFLAG_SERVER, ChatGetAccVar, this, "Get account var")
 
 #undef CHAT_COMMAND

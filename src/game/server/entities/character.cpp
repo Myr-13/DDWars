@@ -206,7 +206,7 @@ void CCharacter::HandleNinja()
 		GameServer()->CreateDamageInd(m_Pos, 0, NinjaTime / Server()->TickSpeed(), Teams()->TeamMask(Team(), -1, m_pPlayer->GetCID()));
 	}
 
-	m_Armor = clamp(10 - (NinjaTime / 15), 0, 10);
+	//m_Armor = clamp(10 - (NinjaTime / 15), 0, 10);
 
 	// force ninja Weapon
 	SetWeapon(WEAPON_NINJA);
@@ -1000,7 +1000,7 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 
 	CCollision *col = GameServer()->Collision();
 	vec2 pos = m_Pos;
-	if(col->GetTileIndex(col->GetPureMapIndex(pos.x, pos.y)) == 179)
+	if(col->GetTileIndex(col->GetPureMapIndex(pos.x, pos.y)) == 179 && Weapon != WEAPON_GUN)
 	{
 		GameServer()->SendChatTarget(From, "You can't damage other players from green zone");
 
@@ -1008,7 +1008,7 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 	}
 
 	pos = GameServer()->m_apPlayers[From]->GetCharacter()->Core()->m_Pos;
-	if(col->GetTileIndex(col->GetPureMapIndex(pos.x, pos.y)) == 179)
+	if(col->GetTileIndex(col->GetPureMapIndex(pos.x, pos.y)) == 179 && Weapon != WEAPON_GUN)
 	{
 		GameServer()->SendChatTarget(From, "You can't damage player when he in green zone");
 
@@ -1016,6 +1016,9 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 	}
 
 	m_Core.m_Vel += Force;
+
+	if(Weapon == WEAPON_GUN)
+		return true;
 
 	//if(GameServer()->m_pController->IsFriendlyFire(m_pPlayer->GetCID(), From) && !g_Config.m_SvTeamdamage)
 	//	return false;
@@ -1090,13 +1093,17 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 			{
 				pChr->m_EmoteType = EMOTE_HAPPY;
 				pChr->m_EmoteStop = Server()->Tick() + Server()->TickSpeed();
+
+				pChr->GetPlayer()->m_Score += 1;
+				Server()->SetClientScore(From, pChr->GetPlayer()->m_Score);
+				dbg_msg("game", "%d", pChr->GetPlayer()->m_Score);
 			}
 		}
 
 		return false;
 	}
 
-	if (Dmg > 2)
+	if (Dmg > 3)
 		GameServer()->CreateSound(m_Pos, SOUND_PLAYER_PAIN_LONG);
 	else
 		GameServer()->CreateSound(m_Pos, SOUND_PLAYER_PAIN_SHORT);
@@ -2105,7 +2112,7 @@ void CCharacter::SetRescue()
 void CCharacter::DDRaceTick()
 {
 	mem_copy(&m_Input, &m_SavedInput, sizeof(m_Input));
-	m_Armor = (m_FreezeTime >= 0) ? 10 - (m_FreezeTime / 15) : 0;
+	//m_Armor = (m_FreezeTime >= 0) ? 10 - (m_FreezeTime / 15) : 0;
 	if(m_Input.m_Direction != 0 || m_Input.m_Jump != 0)
 		m_LastMove = Server()->Tick();
 
@@ -2210,7 +2217,7 @@ bool CCharacter::Freeze(int Seconds)
 		return false;
 	if(m_FreezeTick < Server()->Tick() - Server()->TickSpeed() || Seconds == -1)
 	{
-		m_Armor = 0;
+		//m_Armor = 0;
 		m_FreezeTime = Seconds == -1 ? Seconds : Seconds * Server()->TickSpeed();
 		m_FreezeTick = Server()->Tick();
 		return true;
@@ -2227,7 +2234,7 @@ bool CCharacter::UnFreeze()
 {
 	if(m_FreezeTime > 0)
 	{
-		m_Armor = 10;
+		//m_Armor = 10;
 		if(!m_aWeapons[m_Core.m_ActiveWeapon].m_Got)
 			m_Core.m_ActiveWeapon = WEAPON_GUN;
 		m_FreezeTime = 0;

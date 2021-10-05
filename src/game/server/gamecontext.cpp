@@ -24,6 +24,7 @@
 #include <game/generated/protocolglue.h>
 
 #include "entities/character.h"
+#include "entities/flag.h"
 #include "gamemodes/DDRace.h"
 #include "player.h"
 #include "score.h"
@@ -1404,6 +1405,12 @@ void CGameContext::OnClientConnected(int ClientID, void *pData)
 
 void CGameContext::OnClientDrop(int ClientID, const char *pReason)
 {
+	// DDWars accounts
+	if(m_apPlayers[ClientID]->isLoginon)
+	{
+		SaveAccount(GetAccountID(m_apPlayers[ClientID]->m_aAccount));
+	}
+
 	AbortVoteKickOnDisconnect(ClientID);
 	m_pController->OnPlayerDisconnect(m_apPlayers[ClientID], pReason);
 	delete m_apPlayers[ClientID];
@@ -3714,6 +3721,13 @@ void CGameContext::OnSetAuthed(int ClientID, int Level)
 			m_VoteEnforce = CGameContext::VOTE_ENFORCE_NO_ADMIN;
 			Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "CGameContext", "Vote aborted by authorized login.");
 		}
+
+		// DDWars flag
+		/*
+		if (Level == AUTHED_ADMIN) {
+			CFlag *pFlag = new CFlag(&m_World, ClientID);
+			m_World.InsertEntity(pFlag);
+		} */
 	}
 	if(m_TeeHistorianActive)
 	{
@@ -4374,7 +4388,7 @@ void CGameContext::DDWarsTick()
 		if(!player->shopOpen)
 			continue;
 		
-		SendMotd(player->GetCID(), GetPage(player->m_ShopInfo.m_Page));
+		SendMotd(player->GetCID(), GetPage(0));
 	}
 }
 
@@ -4430,7 +4444,7 @@ Account *CGameContext::GetAccount(const char *pName)
 
 		m_pAccounts.push_back(account);
 
-		LoadAccount(m_pAccounts.size(), pName);
+		LoadAccount(m_pAccounts.size() - 1, pName);
 
 		return account;
 	}
@@ -4495,58 +4509,41 @@ void CGameContext::LoginToAccount(const int pClientID, const char *pName, const 
 	else {
 		SendChatTarget(pClientID, "Incorrect password!");
 	}
-
-	//if (!acc->isInit) {
-	//	SendChatTarget(pClientID, "This account not been created.");
-	//	return;
-	//}
-	//
-	//if(str_comp(acc->password, pPassword) == 0)
-	//{
-	//	m_apPlayers[pClientID]->m_aAccount = acc;
-	//	m_apPlayers[pClientID]->isLoginon = true;
-	//
-	//	SendChatTarget(pClientID, "Welcome!");
-	//
-	//	dbg_msg("accounts", "%d login to account: %s", pClientID, pName);
-	//}
-	//else
-	//{
-	//	SendChatTarget(pClientID, "Incorect password!");
-	//}
 }
 
 char *CGameContext::GetAccVar(int CID, int var)
 {
-	Account *acc = m_pAccounts[CID - 1];
-	char aBuf[512];
+	Account *acc = m_pAccounts[CID];
+	char aBuf[256];
+
+	mem_zero(aBuf, sizeof(aBuf));
 
 	switch(var)
 	{
-	case ACC_VAR_MAX_HEALTH: str_format(aBuf, 512, "%d", acc->max_hp); break;
-	case ACC_VAR_MAX_ARMOR: str_format(aBuf, 512, "%d", acc->max_armor); break;
-	case ACC_VAR_DAMAGE: str_format(aBuf, 512, "%d", acc->damage); break;
-	case ACC_VAR_FIRE_SPEED: str_format(aBuf, 512, "%d", acc->fire_speed); break;
-	case ACC_VAR_HACK_SPEED: str_format(aBuf, 512, "%d", acc->hack_speed); break;
-	case ACC_VAR_REGEN: str_format(aBuf, 512, "%d", acc->regen); break;
+	case ACC_VAR_MAX_HEALTH: str_format(aBuf, sizeof(aBuf), "%i", acc->max_hp); break;
+	case ACC_VAR_MAX_ARMOR: str_format(aBuf, sizeof(aBuf), "%i", acc->max_armor); break;
+	case ACC_VAR_DAMAGE: str_format(aBuf, sizeof(aBuf), "%i", acc->damage); break;
+	case ACC_VAR_FIRE_SPEED: str_format(aBuf, sizeof(aBuf), "%i", acc->fire_speed); break;
+	case ACC_VAR_HACK_SPEED: str_format(aBuf, sizeof(aBuf), "%i", acc->hack_speed); break;
+	case ACC_VAR_REGEN: str_format(aBuf, sizeof(aBuf), "%i", acc->regen); break;
 
-	case ACC_VAR_RPG: str_format(aBuf, 512, "%d", (int)acc->RPG); break;
-	case ACC_VAR_MINIGUN: str_format(aBuf, 512, "%d", (int)acc->Minigun); break;
+	case ACC_VAR_RPG: str_format(aBuf, sizeof(aBuf), "%i", (int)acc->RPG); break;
+	case ACC_VAR_MINIGUN: str_format(aBuf, sizeof(aBuf), "%i", (int)acc->Minigun); break;
 
-	case ACC_VAR_GRENADE_SPAWN: str_format(aBuf, 512, "%d", (int)acc->Grenade); break;
-	case ACC_VAR_SHOTGUN_SPAWN: str_format(aBuf, 512, "%d", (int)acc->Shotgun); break;
-	case ACC_VAR_JETPACK_SPAWN: str_format(aBuf, 512, "%d", (int)acc->Jetpack); break;
-	case ACC_VAR_DASH: str_format(aBuf, 512, "%d", (int)acc->Dash); break;
+	case ACC_VAR_GRENADE_SPAWN: str_format(aBuf, sizeof(aBuf), "%i", (int)acc->Grenade); break;
+	case ACC_VAR_SHOTGUN_SPAWN: str_format(aBuf, sizeof(aBuf), "%i", (int)acc->Shotgun); break;
+	case ACC_VAR_JETPACK_SPAWN: str_format(aBuf, sizeof(aBuf), "%i", (int)acc->Jetpack); break;
+	case ACC_VAR_DASH: str_format(aBuf, sizeof(aBuf), "%i", (int)acc->Dash); break;
 
-	case ACC_VAR_KILLS: str_format(aBuf, 512, "%d", acc->kills); break;
-	case ACC_VAR_MONEY: str_format(aBuf, 512, "%d", acc->money); break;
-	case ACC_VAR_LEVEL: str_format(aBuf, 512, "%d", acc->lvl); break;
-	case ACC_VAR_XP: str_format(aBuf, 512, "%d", acc->xp); break;
-	case ACC_VAR_XP_TO_LEVEL: str_format(aBuf, 512, "%d", acc->xp_to_lvl); break;
-	case ACC_VAR_TOKENS: str_format(aBuf, 512, "%d", acc->tokens); break;
+	case ACC_VAR_KILLS: str_format(aBuf, sizeof(aBuf), "%i", acc->kills); break;
+	case ACC_VAR_MONEY: str_format(aBuf, sizeof(aBuf), "%i", acc->money); break;
+	case ACC_VAR_LEVEL: str_format(aBuf, sizeof(aBuf), "%i", acc->lvl); break;
+	case ACC_VAR_XP: str_format(aBuf, sizeof(aBuf), "%i", acc->xp); break;
+	case ACC_VAR_XP_TO_LEVEL: str_format(aBuf, sizeof(aBuf), "%i", acc->xp_to_lvl); break;
+	case ACC_VAR_TOKENS: str_format(aBuf, sizeof(aBuf), "%i", acc->tokens); break;
 
-	case ACC_VAR_USERNAME: str_format(aBuf, 512, "%s", acc->name); break;
-	case ACC_VAR_PASSWORD: str_format(aBuf, 512, "%s", acc->password); break;
+	case ACC_VAR_USERNAME: str_format(aBuf, sizeof(aBuf), "%s", acc->name); break;
+	case ACC_VAR_PASSWORD: str_format(aBuf, sizeof(aBuf), "%s", acc->password); break;
 	}
 
 	return aBuf;
@@ -4554,7 +4551,7 @@ char *CGameContext::GetAccVar(int CID, int var)
 
 void CGameContext::SetAccVar(int CID, int var, const char *pData)
 {
-	Account *acc = m_pAccounts[CID - 1];
+	Account *acc = m_pAccounts[CID];
 
 	switch(var)
 	{
@@ -4589,7 +4586,7 @@ void CGameContext::SaveAccount(int CID)
 {
 	//std::string data;
 	char aBuf[256];
-	str_format(aBuf, sizeof(aBuf), "accounts/%s.acc", m_pAccounts[CID - 1]->name);
+	str_format(aBuf, sizeof(aBuf), "accounts/%s.acc", m_pAccounts[CID]->name);
 	//std::ofstream AccFile(aBuf);
 
 	//if(AccFile.is_open())
@@ -4658,4 +4655,21 @@ bool CGameContext::LoadAccount(int CID, const char *pName)
 	io_close(file);
 
 	return true;
+}
+
+void CGameContext::LogoutFromAccount(const int ClientID) {
+	CPlayer *player = m_apPlayers[ClientID];
+
+	if(!player)
+		return;
+
+	if(!player->isLoginon)
+		return;
+
+	SaveAccount(GetAccountID(player->m_aAccount));
+
+	player->isLoginon = 0;
+	player->m_aAccount = NULL;
+
+	SendChatTarget(ClientID, "Logout succsessful");
 }

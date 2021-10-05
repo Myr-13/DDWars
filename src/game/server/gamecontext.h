@@ -483,6 +483,7 @@ public:
 
 	void CreateNewAccount(const char *pName, const char *pPassword, int ClientID);
 	void LoginToAccount(const int pClientID, const char *pName, const char *pPassword);
+	void LogoutFromAccount(const int ClientID);
 
 	void SaveAccount(int CID);
 	bool LoadAccount(int CID, const char *pName);
@@ -534,6 +535,10 @@ private:
 	static void ChatOpenShop(IConsole::IResult *pResult, void *pUserData);
 	static void ChatAccountLogin(IConsole::IResult *pResult, void *pUserData);
 	static void ChatAccountRegister(IConsole::IResult *pResult, void *pUserData);
+	static void ChatAFK(IConsole::IResult *pResult, void *pUserData);
+	static void ChatSetAccVar(IConsole::IResult *pResult, void *pUserData);
+	static void ChatGetAccVar(IConsole::IResult *pResult, void *pUserData);
+	static void ChatLogout(IConsole::IResult *pResult, void *pUserData);
 
 private:
 	static void ConSpawnNPC(IConsole::IResult *pResult, void *pUserData);

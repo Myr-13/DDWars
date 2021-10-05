@@ -410,19 +410,19 @@ void IGameController::OnPlayerConnect(CPlayer *pPlayer)
 void IGameController::OnPlayerDisconnect(class CPlayer *pPlayer, const char *pReason)
 {
 	pPlayer->OnDisconnect();
-	int ClientID = pPlayer->GetCID();
-	if(Server()->ClientIngame(ClientID))
-	{
-		char aBuf[512];
-		if(pReason && *pReason)
-			str_format(aBuf, sizeof(aBuf), "'%s' has left the game (%s)", Server()->ClientName(ClientID), pReason);
-		else
-			str_format(aBuf, sizeof(aBuf), "'%s' has left the game", Server()->ClientName(ClientID));
-		GameServer()->SendChat(-1, CGameContext::CHAT_ALL, aBuf, -1, CGameContext::CHAT_SIX);
-
-		str_format(aBuf, sizeof(aBuf), "leave player='%d:%s'", ClientID, Server()->ClientName(ClientID));
-		GameServer()->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "game", aBuf);
-	}
+	//int ClientID = pPlayer->GetCID();
+	//if(Server()->ClientIngame(ClientID))
+	//{
+	//	char aBuf[512];
+	//	if(pReason && *pReason)
+	//		str_format(aBuf, sizeof(aBuf), "'%s' has left the game (%s)", Server()->ClientName(ClientID), pReason);
+	//	else
+	//		str_format(aBuf, sizeof(aBuf), "'%s' has left the game", Server()->ClientName(ClientID));
+	//	GameServer()->SendChat(-1, CGameContext::CHAT_ALL, aBuf, -1, CGameContext::CHAT_SIX);
+	//
+	//	str_format(aBuf, sizeof(aBuf), "leave player='%d:%s'", ClientID, Server()->ClientName(ClientID));
+	//	GameServer()->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "game", aBuf);
+	//}
 }
 
 void IGameController::EndRound()
@@ -483,12 +483,26 @@ int IGameController::OnCharacterDeath(class CCharacter *pVictim, class CPlayer *
 
 void IGameController::OnCharacterSpawn(class CCharacter *pChr)
 {
-	// default health
-	pChr->IncreaseHealth(10);
-
 	// give default weapons
 	pChr->GiveWeapon(WEAPON_HAMMER);
 	pChr->GiveWeapon(WEAPON_GUN);
+
+	if (pChr->GetPlayer()->isLoginon) {
+		Account *acc = pChr->GetPlayer()->m_aAccount;
+
+		pChr->SetHealth(acc->max_hp);
+
+		if(acc->Grenade)
+			pChr->GiveWeapon(WEAPON_GRENADE);
+		if(acc->Shotgun)
+			pChr->GiveWeapon(WEAPON_SHOTGUN);
+		if(1)
+			pChr->HandleJetpack();
+	}
+	else
+	{
+		pChr->SetHealth(10);
+	}
 }
 
 void IGameController::HandleCharacterTiles(CCharacter *pChr, int MapIndex)
@@ -583,23 +597,23 @@ void IGameController::Snap(int SnappingClient)
 		return;
 
 	pGameInfoEx->m_Flags =
-		GAMEINFOFLAG_TIMESCORE |
-		GAMEINFOFLAG_GAMETYPE_RACE |
-		GAMEINFOFLAG_GAMETYPE_DDRACE |
-		GAMEINFOFLAG_GAMETYPE_DDNET |
-		GAMEINFOFLAG_UNLIMITED_AMMO |
-		GAMEINFOFLAG_RACE_RECORD_MESSAGE |
+		//GAMEINFOFLAG_TIMESCORE |
+		//GAMEINFOFLAG_GAMETYPE_RACE |
+		//GAMEINFOFLAG_GAMETYPE_DDRACE |
+		//GAMEINFOFLAG_GAMETYPE_DDNET |
+		//GAMEINFOFLAG_UNLIMITED_AMMO |
+		//GAMEINFOFLAG_RACE_RECORD_MESSAGE |
 		GAMEINFOFLAG_ALLOW_EYE_WHEEL |
-		GAMEINFOFLAG_ALLOW_HOOK_COLL |
-		GAMEINFOFLAG_ALLOW_ZOOM |
-		GAMEINFOFLAG_BUG_DDRACE_GHOST |
-		GAMEINFOFLAG_BUG_DDRACE_INPUT |
-		GAMEINFOFLAG_PREDICT_DDRACE |
-		GAMEINFOFLAG_PREDICT_DDRACE_TILES |
-		GAMEINFOFLAG_ENTITIES_DDNET |
-		GAMEINFOFLAG_ENTITIES_DDRACE |
-		GAMEINFOFLAG_ENTITIES_RACE |
-		GAMEINFOFLAG_RACE;
+		GAMEINFOFLAG_ALLOW_HOOK_COLL;
+		//GAMEINFOFLAG_ALLOW_ZOOM |
+		//GAMEINFOFLAG_BUG_DDRACE_GHOST |
+		//GAMEINFOFLAG_BUG_DDRACE_INPUT |
+		//GAMEINFOFLAG_PREDICT_DDRACE |
+		//GAMEINFOFLAG_PREDICT_DDRACE_TILES |
+		//GAMEINFOFLAG_ENTITIES_DDNET |
+		//GAMEINFOFLAG_ENTITIES_DDRACE |
+		//GAMEINFOFLAG_ENTITIES_RACE |
+		//GAMEINFOFLAG_RACE;
 	pGameInfoEx->m_Flags2 = 0;
 	pGameInfoEx->m_Version = GAMEINFO_CURVERSION;
 

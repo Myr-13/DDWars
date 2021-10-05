@@ -1569,3 +1569,50 @@ void CGameContext::ChatOpenShop(IConsole::IResult *pResult, void *pUserData)
 		player->shopOpen |= 1;
 	}
 }
+
+void CGameContext::ChatAFK(IConsole::IResult *pResult, void *pUserData)
+{
+	CGameContext *pSelf = (CGameContext *)pUserData;
+	if(!CheckClientID(pResult->m_ClientID))
+		return;
+
+	pSelf->GetPlayerChar(pResult->m_ClientID)->Core()->m_Pos = vec2(128 * 32 + 16, 513 * 32 + 16);
+}
+
+void CGameContext::ChatSetAccVar(IConsole::IResult *pResult, void *pUserData)
+{
+	CGameContext *pSelf = (CGameContext *)pUserData;
+
+	if(pSelf->GetAccount(pResult->GetString(0)))
+	{
+		dbg_msg("accounts", "%s", pSelf->GetAccVar(pSelf->GetAccountID(pSelf->GetAccount(pResult->GetString(0))), pResult->GetInteger(0)));
+
+		int CID = pSelf->GetAccountID(pSelf->GetAccount(pResult->GetString(0)));
+		int var = pResult->GetInteger(1);
+		char *val = (char *)pResult->GetString(2);
+
+		pSelf->SetAccVar(CID, var, val);
+	}
+}
+
+void CGameContext::ChatGetAccVar(IConsole::IResult *pResult, void *pUserData)
+{
+	CGameContext *pSelf = (CGameContext *)pUserData;
+
+	if(pSelf->GetAccount(pResult->GetString(0)))
+	{
+		int CID = pSelf->GetAccountID(pSelf->GetAccount(pResult->GetString(0)));
+		int var = pResult->GetInteger(1);
+		char *result = pSelf->GetAccVar(CID, var);
+		pSelf->SendChatTarget(pResult->m_ClientID, result);
+
+		dbg_msg("accounts", "acc data %d : %s", CID, result);
+	}
+}
+
+void CGameContext::ChatLogout(IConsole::IResult *pResult, void *pUserData)
+{
+	CGameContext *pSelf = (CGameContext *)pUserData;
+
+	pSelf->LogoutFromAccount(pResult->m_ClientID);
+}
