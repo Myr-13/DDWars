@@ -496,8 +496,8 @@ void IGameController::OnCharacterSpawn(class CCharacter *pChr)
 			pChr->GiveWeapon(WEAPON_GRENADE);
 		if(acc->Shotgun)
 			pChr->GiveWeapon(WEAPON_SHOTGUN);
-		if(1)
-			pChr->HandleJetpack();
+		if(acc->Jetpack)
+			pChr->GiveJetpack(true);
 	}
 	else
 	{

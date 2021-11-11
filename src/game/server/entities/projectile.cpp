@@ -56,7 +56,7 @@ void CProjectile::Reset()
 vec2 CProjectile::GetPos(float Time)
 {
 	float Curvature = 0;
-	float Speed = 0;
+	float Speed = m_Force;
 
 	switch(m_Type)
 	{
@@ -85,7 +85,7 @@ vec2 CProjectile::GetPos(float Time)
 			Curvature = GameServer()->TuningList()[m_TuneZone].m_ShotgunCurvature;
 			Speed = GameServer()->TuningList()[m_TuneZone].m_ShotgunSpeed;
 		}
-
+	
 		break;
 
 	case WEAPON_GUN:
@@ -213,6 +213,12 @@ void CProjectile::Tick()
 					pOwnerChar->m_IsBlueTeleGunTeleport = TileFIndex == TILE_ALLOW_BLUE_TELE_GUN || IsBlueSwitchTeleGun;
 				}
 			}
+		}
+
+		if(m_Type == WEAPON_SHOTGUN)
+		{
+			if(pTargetChr)
+				pTargetChr->TakeDamage(vec2(0, 0), 1, m_Owner, WEAPON_SHOTGUN);
 		}
 
 		if(Collide && m_Bouncing != 0)

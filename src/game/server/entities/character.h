@@ -251,7 +251,9 @@ public:
 	void SetActiveWeapon(int ActiveWeap) { m_Core.m_ActiveWeapon = ActiveWeap; };
 	void SetLastAction(int LastAction) { m_LastAction = LastAction; };
 	int GetArmor() { return m_Armor; };
+	int GetHealth() { return m_Health; };
 	void SetArmor(int Armor) { m_Armor = Armor; };
+	void SetHealth(int Health) { m_Health = Health; };
 	CCharacterCore GetCore() { return m_Core; };
 	void SetCore(CCharacterCore Core) { m_Core = Core; };
 	CCharacterCore *Core() { return &m_Core; };
@@ -263,6 +265,7 @@ public:
 	void SetNinjaActivationDir(vec2 ActivationDir) { m_Ninja.m_ActivationDir = ActivationDir; };
 	void SetNinjaActivationTick(int ActivationTick) { m_Ninja.m_ActivationTick = ActivationTick; };
 	void SetNinjaCurrentMoveTime(int CurrentMoveTime) { m_Ninja.m_CurrentMoveTime = CurrentMoveTime; };
+	void GiveJetpack(bool give) { m_Jetpack = give; } 
 
 	int GetLastAction() const { return m_LastAction; }
 
@@ -273,6 +276,8 @@ public:
 	CNetObj_PlayerInput *Input() { return &m_Input; }
 	CNetObj_PlayerInput *LatestInput() { return &m_LatestInput; }
 	void SetNPCType(int type);
+
+	bool withFlag = 0;
 
 private:
 	class CShopNPC* ai;

@@ -4214,18 +4214,24 @@ void CGameContext::DDWarsInit()
 			item->m_Level = 1;
 			item->m_CostToken = 1;
 			item->m_ClanLevel = 0;
+			item->m_AccVarID = 13;
+			item->m_Count = 1000000;
 			break;
 		case ITEM_LEVEL:
 			item->m_Cost = 0;
 			item->m_Level = 1;
 			item->m_CostToken = 4;
 			item->m_ClanLevel = 0;
+			item->m_AccVarID = 14;
+			item->m_Count = 1;
 			break;
 		case ITEM_TOKEN:
 			item->m_Cost = 1000000;
 			item->m_Level = 1;
 			item->m_CostToken = 0;
 			item->m_ClanLevel = 0;
+			item->m_AccVarID = 17;
+			item->m_Count = 1;
 			break;
 
 		case ITEM_GRENADE:
@@ -4233,30 +4239,38 @@ void CGameContext::DDWarsInit()
 			item->m_Level = 1;
 			item->m_CostToken = 0;
 			item->m_ClanLevel = 0;
+			item->m_AccVarID = -1;
+			item->m_WeaponID = WEAPON_GRENADE;
 			break;
 		case ITEM_SHOTGUN:
 			item->m_Cost = 1000;
 			item->m_Level = 2;
 			item->m_CostToken = 0;
 			item->m_ClanLevel = 0;
+			item->m_AccVarID = -1;
+			item->m_WeaponID = WEAPON_SHOTGUN;
 			break;
 		case ITEM_JETPACK:
 			item->m_Cost = 20000;
 			item->m_Level = 10;
 			item->m_CostToken = 0;
 			item->m_ClanLevel = 0;
+			item->m_AccVarID = 10;
 			break;
 		case ITEM_LASER:
 			item->m_Cost = 5000;
 			item->m_Level = 5;
 			item->m_CostToken = 0;
 			item->m_ClanLevel = 0;
+			item->m_AccVarID = -1;
+			item->m_WeaponID = WEAPON_LASER;
 			break;
 		case ITEM_HACKER:
 			item->m_Cost = 1000;
 			item->m_Level = 1;
 			item->m_CostToken = 0;
 			item->m_ClanLevel = 0;
+			item->m_AccVarID = -1;
 			break;
 
 		case ITEM_GRENADE_SPAWN:
@@ -4264,30 +4278,40 @@ void CGameContext::DDWarsInit()
 			item->m_Level = 20;
 			item->m_CostToken = 0;
 			item->m_ClanLevel = 0;
+			item->m_AccVarID = 8;
+			item->m_Count = 1;
 			break;
 		case ITEM_SHOTGUN_SPAWN:
 			item->m_Cost = 150000;
 			item->m_Level = 20;
 			item->m_CostToken = 0;
 			item->m_ClanLevel = 0;
+			item->m_AccVarID = 9;
+			item->m_Count = 1;
 			break;
 		case ITEM_JETPACK_SPAWN:
 			item->m_Cost = 1000000;
 			item->m_Level = 30;
 			item->m_CostToken = 0;
 			item->m_ClanLevel = 0;
+			item->m_AccVarID = 10;
+			item->m_Count = 1;
 			break;
 		case ITEM_LASER_SPAWN:
 			item->m_Cost = 1000000;
 			item->m_Level = 20;
 			item->m_CostToken = 0;
 			item->m_ClanLevel = 0;
+			item->m_AccVarID = -2;
+			item->m_Count = 1;
 			break;
 		case ITEM_HACKER_SPAWN:
 			item->m_Cost = 50000;
 			item->m_Level = 10;
 			item->m_CostToken = 0;
 			item->m_ClanLevel = 0;
+			item->m_AccVarID = -2;
+			item->m_Count = 1;
 			break;
 
 		case ITEM_RPG:
@@ -4295,12 +4319,16 @@ void CGameContext::DDWarsInit()
 			item->m_Level = 1;
 			item->m_CostToken = 100;
 			item->m_ClanLevel = 0;
+			item->m_AccVarID = 6;
+			item->m_Count = 1;
 			break;
 		case ITEM_MINIGUN:
 			item->m_Cost = 0;
 			item->m_Level = 1;
 			item->m_CostToken = 100;
 			item->m_ClanLevel = 0;
+			item->m_AccVarID = 7;
+			item->m_Count = 1;
 			break;
 
 		case ITEM_DASH:
@@ -4308,46 +4336,170 @@ void CGameContext::DDWarsInit()
 			item->m_Level = 1;
 			item->m_CostToken = 0;
 			item->m_ClanLevel = 20;
+			item->m_AccVarID = 11;
+			item->m_Count = 1;
 			break;
 		}
 	}
 }
 
-char* CGameContext::GetPage(int pPage) {
+char* CGameContext::GetPage(int pPage, int pState) {
 	char aBuf[256];
+
+	mem_zero(&aBuf, sizeof(aBuf));
 
 	ShopItem item = m_ShopItems[pPage];
 
-	str_format(aBuf, sizeof(aBuf), "> %s\nCost: %d$\nLevel: %d\nClan level: %d\nToken: %d", 
-		GetShopItemPrintName(pPage),
-		item.m_Cost,
-		item.m_Level,
-		item.m_ClanLevel,
-		item.m_CostToken
-	);
+	char aName[256];
+	char *name = GetShopItemPrintName(pPage);
+	str_copy(aName, name, 256);
+
+	if (pState == SHOP_STATE_MAIN) {
+		str_format(aBuf, sizeof(aBuf), "Shoot - Next page\nJump - Close shop\nHook - Buy item\n\n> %s ( %d / %d ) <\n\n~ Need ~\n\nCost: %d$ \nLevel: %d \nClan level: %d \nTokens: %d",
+			aName,
+			pPage + 1,
+			NUM_SHOP_ITEMS,
+			item.m_Cost,
+			item.m_Level,
+			item.m_ClanLevel,
+			item.m_CostToken);
+	}
+	if(pState == SHOP_STATE_NO_ACCOUNT)
+	{
+		str_format(aBuf, sizeof(aBuf), 
+			"You are not logged in\n"
+			"To log in write to chat /login\n"
+			"To make an account write to chat /register");
+	}
+	if(pState == SHOP_STATE_NO_MONEY)
+	{
+		str_format(aBuf, sizeof(aBuf), "Not enough money");
+	}
+	if(pState == SHOP_STATE_NO_LVL)
+	{
+		str_format(aBuf, sizeof(aBuf), "Not enough level");
+	}
+	if(pState == SHOP_STATE_NO_TOKEN)
+	{
+		str_format(aBuf, sizeof(aBuf), "Not enough tokens");
+	}
+	if(pState == SHOP_STATE_NO_CLAN_LVL)
+	{
+		str_format(aBuf, sizeof(aBuf), "Not enough clan level");
+	}
 
 	return aBuf;
 }
 
 char* CGameContext::GetShopItemPrintName(int id) {
+	char aBuf[256];
+
+	mem_zero(&aBuf, sizeof(aBuf));
+
 	switch(id)
 	{
-	case ITEM_MONEY: return "Money"; break;
-	case ITEM_LEVEL: return "Level"; break;
-	case ITEM_TOKEN: return "Token"; break;
-	case ITEM_GRENADE: return "Grenade"; break;
-	case ITEM_SHOTGUN: return "ShotGun"; break;
-	case ITEM_JETPACK: return "Jetpack"; break;
-	case ITEM_LASER: return "Laser"; break;
-	case ITEM_HACKER: return "Door cracker"; break;
-	case ITEM_GRENADE_SPAWN: return "Grenade on spawn"; break;
-	case ITEM_SHOTGUN_SPAWN: return "Grenade on spawn"; break;
-	case ITEM_JETPACK_SPAWN: return "Jetpack on spawn"; break;
-	case ITEM_LASER_SPAWN: return "Laser on spawn"; break;
-	case ITEM_HACKER_SPAWN: return "Door cracker on spawn"; break;
-	case ITEM_RPG: return "RPG"; break;
-	case ITEM_MINIGUN: return "Minigun"; break;
-	case ITEM_DASH: return "Dash"; break;
+	case ITEM_MONEY: str_format(aBuf, sizeof(aBuf), "%s", "Money"); break;
+	case ITEM_LEVEL: str_format(aBuf, sizeof(aBuf), "%s", "Level"); break;
+	case ITEM_TOKEN: str_format(aBuf, sizeof(aBuf), "%s", "Token"); break;
+	case ITEM_GRENADE: str_format(aBuf, sizeof(aBuf), "%s", "Grenade"); break;
+	case ITEM_SHOTGUN: str_format(aBuf, sizeof(aBuf), "%s", "Shotgun"); break;
+	case ITEM_JETPACK: str_format(aBuf, sizeof(aBuf), "%s", "Jetpack"); break;
+	case ITEM_LASER: str_format(aBuf, sizeof(aBuf), "%s", "Laser"); break;
+	case ITEM_HACKER: str_format(aBuf, sizeof(aBuf), "%s", "Lockpick"); break;
+	case ITEM_GRENADE_SPAWN: str_format(aBuf, sizeof(aBuf), "%s", "Grenade on spawn"); break;
+	case ITEM_SHOTGUN_SPAWN: str_format(aBuf, sizeof(aBuf), "%s", "Shotgun on spawn"); break;
+	case ITEM_JETPACK_SPAWN: str_format(aBuf, sizeof(aBuf), "%s", "Jetpack on spawn"); break;
+	case ITEM_LASER_SPAWN: str_format(aBuf, sizeof(aBuf), "%s", "Laser on spawn"); break;
+	case ITEM_HACKER_SPAWN: str_format(aBuf, sizeof(aBuf), "%s", "Lockpick on spawn"); break;
+	case ITEM_RPG: str_format(aBuf, sizeof(aBuf), "%s", "RPG"); break;
+	case ITEM_MINIGUN: str_format(aBuf, sizeof(aBuf), "%s", "Minigun"); break;
+	case ITEM_DASH: str_format(aBuf, sizeof(aBuf), "%s", "Dash"); break;
+	}
+
+	return aBuf;
+}
+
+void CGameContext::SendShop(int ClientID)
+{
+	CPlayer *player = m_apPlayers[ClientID];
+	if(!player)
+		return;
+
+	int page = player->m_ShopInfo.m_Page;
+	int state = player->m_ShopInfo.m_ShopState;
+	char *pageContext = GetPage(page, state);
+
+	char aBuf[512];
+	mem_copy(aBuf, pageContext, 512);
+
+	SendMotd(ClientID, aBuf);
+}
+
+void CGameContext::NextPage(int ClientID) {
+	CPlayer *player = m_apPlayers[ClientID];
+
+	if(!player)
+		return;
+
+	if(!player->shopOpen)
+		return;
+
+	if(player->m_ShopInfo.m_ShopState != SHOP_STATE_MAIN)
+		player->m_ShopInfo.m_ShopState = SHOP_STATE_MAIN;
+	else
+	{
+		if(player->m_ShopInfo.m_Page < 15)
+			player->m_ShopInfo.m_Page += 1;
+		else
+			player->m_ShopInfo.m_Page = 0;
+	}
+
+	SendShop(ClientID);
+}
+
+void CGameContext::BuyItem(int ClientID) {
+	if (!m_apPlayers[ClientID]->isLoginon) {
+		m_apPlayers[ClientID]->m_ShopInfo.m_ShopState = SHOP_STATE_NO_ACCOUNT;
+		SendShop(ClientID);
+		return;
+	}
+
+	Account *acc = m_apPlayers[ClientID]->m_aAccount;
+	int ItemID = m_apPlayers[ClientID]->m_ShopInfo.m_Page;
+
+	if (acc->money < m_ShopItems[ItemID].m_Cost) 
+	{
+		m_apPlayers[ClientID]->m_ShopInfo.m_ShopState = SHOP_STATE_NO_MONEY;
+		SendShop(ClientID);
+
+		return;
+	}
+	if(acc->lvl < m_ShopItems[ItemID].m_Level)
+	{
+		m_apPlayers[ClientID]->m_ShopInfo.m_ShopState = SHOP_STATE_NO_LVL;
+		SendShop(ClientID);
+
+		return;
+	}
+	if(acc->tokens < m_ShopItems[ItemID].m_CostToken)
+	{
+		m_apPlayers[ClientID]->m_ShopInfo.m_ShopState = SHOP_STATE_NO_TOKEN;
+		SendShop(ClientID);
+
+		return;
+	}
+
+	m_apPlayers[ClientID]->m_ShopInfo.m_ShopState = SHOP_STATE_MAIN;
+
+	if (m_ShopItems[ItemID].m_AccVarID > -1) {
+		char aBuf[256];
+		str_format(aBuf, sizeof(aBuf), "%d", m_ShopItems[ItemID].m_Count);
+
+		SetAccVar(ClientID, m_ShopItems[ItemID].m_AccVarID, aBuf);
+	}
+
+	if (m_ShopItems[ItemID].m_WeaponID > -1) {
+		m_apPlayers[ClientID]->GetCharacter()->GiveWeapon(m_ShopItems[ItemID].m_WeaponID);
 	}
 }
 
@@ -4378,17 +4530,6 @@ void CGameContext::DDWarsTick()
 			SendChatTarget(player->GetCID(), "Robert: Bay!");
 			player->inShop = 0;
 		}
-	}
-
-	// Shop
-	for (auto* player : m_apPlayers) {
-		if (!player)
-			continue;
-
-		if(!player->shopOpen)
-			continue;
-		
-		SendMotd(player->GetCID(), GetPage(0));
 	}
 }
 
@@ -4482,10 +4623,10 @@ void CGameContext::CreateNewAccount(const char *pName, const char *pPassword, in
 
 	m_pAccounts.push_back(acc);
 
-	SendChatTarget(ClientID, "Your account created. Now you can /login to your account.");
+	SendChatTarget(ClientID, "Your account created. Now you can login to your account.");
 	dbg_msg("accounts", "Created new account with name: %s", pName);
 
-	SaveAccount(m_pAccounts.size());
+	SaveAccount(m_pAccounts.size() - 1);
 }
 
 void CGameContext::LoginToAccount(const int pClientID, const char *pName, const char *pPassword)
@@ -4493,7 +4634,12 @@ void CGameContext::LoginToAccount(const int pClientID, const char *pName, const 
 	Account *acc = GetAccount(pName);
 
 	if (!acc) {
-		SendChatTarget(pClientID, "This account not been created.");
+		SendChatTarget(pClientID, "This account not been created");
+
+		return;
+	}
+	if (m_apPlayers[pClientID]->isLoginon) {
+		SendChatTarget(pClientID, "You are already logged in");
 
 		return;
 	}
@@ -4509,6 +4655,8 @@ void CGameContext::LoginToAccount(const int pClientID, const char *pName, const 
 	else {
 		SendChatTarget(pClientID, "Incorrect password!");
 	}
+
+	m_apPlayers[pClientID]->KillCharacter();
 }
 
 char *CGameContext::GetAccVar(int CID, int var)
@@ -4608,8 +4756,9 @@ void CGameContext::SaveAccount(int CID)
 	str_format(data, 1024, "");
 	for(int i = 0; i < 20; i++)
 	{
-		str_format(aaBuf, 256, "%s\n", GetAccVar(CID, i));
-		str_append(data, aaBuf, 1024);
+		str_copy(aaBuf, GetAccVar(CID, i), sizeof(aaBuf));
+		str_append(aaBuf, "\n", sizeof(aaBuf));
+		str_append(data, aaBuf, sizeof(data));
 	}
 
 	io_write(file, data, 1024);
@@ -4648,8 +4797,6 @@ bool CGameContext::LoadAccount(int CID, const char *pName)
 	{
 		const char *pData = lines.Get();
 		SetAccVar(CID, i, pData);
-
-		dbg_msg("account", "%s", pData);
 	}
 
 	io_close(file);
@@ -4672,4 +4819,6 @@ void CGameContext::LogoutFromAccount(const int ClientID) {
 	player->m_aAccount = NULL;
 
 	SendChatTarget(ClientID, "Logout succsessful");
+
+	player->KillCharacter();
 }

@@ -1562,12 +1562,11 @@ void CGameContext::ChatOpenShop(IConsole::IResult *pResult, void *pUserData)
 	if(!CheckClientID(pResult->m_ClientID))
 		return;
 
-	CPlayer *player = pSelf->m_apPlayers[pResult->m_ClientID];
 	int id = pResult->m_ClientID;
+	CPlayer *player = pSelf->m_apPlayers[id];
 
-	if (!player->inShop) {
-		player->shopOpen |= 1;
-	}
+	pSelf->SendShop(id);
+	player->shopOpen = 1;
 }
 
 void CGameContext::ChatAFK(IConsole::IResult *pResult, void *pUserData)
@@ -1603,7 +1602,9 @@ void CGameContext::ChatGetAccVar(IConsole::IResult *pResult, void *pUserData)
 	{
 		int CID = pSelf->GetAccountID(pSelf->GetAccount(pResult->GetString(0)));
 		int var = pResult->GetInteger(1);
-		char *result = pSelf->GetAccVar(CID, var);
+		char result[512];
+		str_copy(result, pSelf->GetAccVar(CID, var), sizeof(result));
+
 		pSelf->SendChatTarget(pResult->m_ClientID, result);
 
 		dbg_msg("accounts", "acc data %d : %s", CID, result);

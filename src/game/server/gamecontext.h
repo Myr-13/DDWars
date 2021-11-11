@@ -50,6 +50,17 @@ enum
 	NUM_TUNEZONES = 256
 };
 
+enum
+{
+	SHOP_STATE_MAIN,
+	SHOP_STATE_CONFIRM,
+	SHOP_STATE_NO_ACCOUNT,
+	SHOP_STATE_NO_MONEY,
+	SHOP_STATE_NO_LVL,
+	SHOP_STATE_NO_TOKEN,
+	SHOP_STATE_NO_CLAN_LVL
+};
+
 #define NUM_SHOP_ITEMS 16
 
 class CConfig;
@@ -524,10 +535,20 @@ public:
 		int m_Level;
 		int m_ClanLevel;
 		int m_CostToken;
+
+		int m_AccVarID;
+		int m_WeaponID = -1;
+		int m_Count = 0;
 	} m_ShopItems[NUM_SHOP_ITEMS];
 
-	char *GetPage(int pPage);
+	char *GetPage(int pPage, int pState);
 	char *GetShopItemPrintName(int id);
+
+	void SendShop(int ClientID);
+
+	void NextPage(int ClientID);
+	//void PrevPage(int ClientID);
+	void BuyItem(int ClientID);
 
 private:
 	std::vector<Account *> m_pAccounts;

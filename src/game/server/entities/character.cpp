@@ -353,7 +353,7 @@ void CCharacter::FireWeapon()
 	}
 
 	DoWeaponSwitch();
-	vec2 Direction = normalize(vec2(m_LatestInput.m_TargetX, m_LatestInput.m_TargetY));
+	vec2 Direction = normalize(vec2(m_LatestInput.m_TargetX, m_LatestInput.m_TargetY)); 
 
 	bool FullAuto = false;
 	if(m_Core.m_ActiveWeapon == WEAPON_GRENADE || m_Core.m_ActiveWeapon == WEAPON_SHOTGUN || m_Core.m_ActiveWeapon == WEAPON_LASER)
@@ -394,9 +394,20 @@ void CCharacter::FireWeapon()
 	// check for ammo
 	if(!m_aWeapons[m_Core.m_ActiveWeapon].m_Ammo)
 	{
-		/*// 125ms is a magical limit of how fast a human can click
+		// 125ms is a magical limit of how fast a human can click
 		m_ReloadTimer = 125 * Server()->TickSpeed() / 1000;
-		GameServer()->CreateSound(m_Pos, SOUND_WEAPON_NOAMMO);*/
+		GameServer()->CreateSound(m_Pos, SOUND_WEAPON_NOAMMO);
+		return;
+	}
+
+	if(GetPlayer()->shopOpen)
+	{
+		if (GetPlayer()->m_ShopInfo.m_NextPageTimer <= Server()->Tick()) {
+			GameServer()->NextPage(GetPlayer()->GetCID());
+
+			GetPlayer()->m_ShopInfo.m_NextPageTimer = Server()->Tick() + 10;
+		}
+
 		return;
 	}
 
@@ -509,51 +520,57 @@ void CCharacter::FireWeapon()
 				Msg.AddInt(((int *)&p)[i]);
 
 			Server()->SendMsg(&Msg, MSGFLAG_VITAL, m_pPlayer->GetCID());
-			GameServer()->CreateSound(m_Pos, SOUND_GUN_FIRE, Teams()->TeamMask(Team(), -1, m_pPlayer->GetCID()));
+
+			if(m_Jetpack)
+				GameServer()->CreateSound(m_Pos, SOUND_HOOK_LOOP, Teams()->TeamMask(Team(), -1, m_pPlayer->GetCID()));
+			else
+				GameServer()->CreateSound(m_Pos, SOUND_GUN_FIRE, Teams()->TeamMask(Team(), -1, m_pPlayer->GetCID()));
 		}
 	}
 	break;
 
 	case WEAPON_SHOTGUN:
 	{
-		/*int ShotSpread = 2;
+		CNetObj_Projectile p;
 
-			CMsgPacker Msg(NETMSGTYPE_SV_EXTRAPROJECTILE);
-			Msg.AddInt(ShotSpread*2+1);
+		int ShotSpread = 2;
 
-			for(int i = -ShotSpread; i <= ShotSpread; ++i)
-			{
-				float Spreading[] = {-0.185f, -0.070f, 0, 0.070f, 0.185f};
-				float a = angle(Direction);
-				a += Spreading[i+2];
-				float v = 1-(absolute(i)/(float)ShotSpread);
-				float Speed = mix((float)GameServer()->Tuning()->m_ShotgunSpeeddiff, 1.0f, v);
-				CProjectile *pProj = new CProjectile(GameWorld(), WEAPON_SHOTGUN,
-					m_pPlayer->GetCID(),
-					ProjStartPos,
-					vec2(cosf(a), sinf(a))*Speed,
-					(int)(Server()->TickSpeed()*GameServer()->Tuning()->m_ShotgunLifetime),
-					1, 0, 0, -1);
+		for(int i = -ShotSpread; i <= ShotSpread; ++i)
+		{
+			float Spreading[] = {-0.185f, -0.070f, 0, 0.070f, 0.185f};
+			float a = angle(Direction);
+			a += Spreading[i + 2];
+			float v = 1 - (absolute(i) / (float)ShotSpread);
+			float Speed = mix((float)GameServer()->Tuning()->m_ShotgunSpeeddiff, 1.0f, v);
+			new CProjectile(GameWorld(), WEAPON_SHOTGUN,
+				m_pPlayer->GetCID(),
+				ProjStartPos,
+				vec2(cosf(a), sinf(a)),
+				30,
+				0,
+				0,
+				0,
+				-1
+				);
+		}
 
-				// pack the Projectile and send it to the client Directly
-				CNetObj_Projectile p;
-				pProj->FillInfo(&p);
+		GameServer()->CreateSound(m_Pos, SOUND_SHOTGUN_FIRE);
 
-				for(unsigned i = 0; i < sizeof(CNetObj_Projectile)/sizeof(int); i++)
-					Msg.AddInt(((int *)&p)[i]);
-			}
+		CMsgPacker Msg(NETMSGTYPE_SV_EXTRAPROJECTILE);
+		Msg.AddInt(1);
+		for(unsigned i = 0; i < sizeof(CNetObj_Projectile) / sizeof(int); i++)
+			Msg.AddInt(((int *)&p)[i]);
+		Server()->SendMsg(&Msg, MSGFLAG_VITAL, m_pPlayer->GetCID());
 
-			Server()->SendMsg(&Msg, MSGFLAG_VITAL, m_pPlayer->GetCID());
-
-			GameServer()->CreateSound(m_Pos, SOUND_SHOTGUN_FIRE);*/
-		float LaserReach;
+		GameServer()->CreateSound(m_Pos, SOUND_SHOTGUN_FIRE);
+		/*float LaserReach;
 		if(!m_TuneZone)
 			LaserReach = GameServer()->Tuning()->m_LaserReach;
 		else
 			LaserReach = GameServer()->TuningList()[m_TuneZone].m_LaserReach;
 
 		new CLaser(&GameServer()->m_World, m_Pos, Direction, LaserReach, m_pPlayer->GetCID(), WEAPON_SHOTGUN);
-		GameServer()->CreateSound(m_Pos, SOUND_SHOTGUN_FIRE, Teams()->TeamMask(Team(), -1, m_pPlayer->GetCID()));
+		GameServer()->CreateSound(m_Pos, SOUND_SHOTGUN_FIRE, Teams()->TeamMask(Team(), -1, m_pPlayer->GetCID()));*/
 	}
 	break;
 
@@ -992,6 +1009,11 @@ void CCharacter::Die(int Killer, int Weapon)
 
 bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 {
+	CPlayer *from = GameServer()->m_apPlayers[From];
+	if (from->shopOpen) {
+		return true;
+	}
+
 	if (m_pPlayer->isNPC) {
 		GameServer()->SendChatTarget(From, "You can't damage NPC!");
 
@@ -1007,7 +1029,7 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 		return true;
 	}
 
-	pos = GameServer()->m_apPlayers[From]->GetCharacter()->Core()->m_Pos;
+	pos = from->GetCharacter()->Core()->m_Pos;
 	if(col->GetTileIndex(col->GetPureMapIndex(pos.x, pos.y)) == 179 && Weapon != WEAPON_GUN)
 	{
 		GameServer()->SendChatTarget(From, "You can't damage player when he in green zone");
@@ -2148,6 +2170,16 @@ void CCharacter::DDRaceTick()
 	}
 
 	m_Core.m_Id = GetPlayer()->GetCID();
+
+	// DDWars shop
+	if (GetPlayer()->shopOpen) {
+		if(m_Input.m_Jump >= 1)
+			GetPlayer()->shopOpen = 0;
+		if(m_Input.m_Hook >= 1)
+			GameServer()->BuyItem(GetPlayer()->GetCID());
+
+		ResetInput();
+	}
 }
 
 void CCharacter::DDRacePostCoreTick()

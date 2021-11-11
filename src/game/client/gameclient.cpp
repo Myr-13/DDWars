@@ -397,8 +397,8 @@ void CGameClient::OnInit()
 // MClient main
 int CGameClient::GetNearestTee() {
 	int near = NearestTeeID;
-	float base_dist = BotMaxDistance;
-	float dist = base_dist;
+	float base_dist = 700;
+	float dist = 300;
 
 	for (int i = 0; i < MAX_CLIENTS; i++) {
 		CClientData chr = m_aClients[i];
@@ -461,7 +461,8 @@ void CGameClient::ClientUpdate()
 	if(!m_aClients[m_LocalIDs[0]].m_Active)
 		return;
 
-	if (IsFreezeTile(pos.x + 32, pos.y)) {
+	/* if(IsFreezeTile(pos.x + 32, pos.y))
+	{
 		Left();
 	}
 	else if (IsFreezeTile(pos.x - 32, pos.y)) {
@@ -481,7 +482,15 @@ void CGameClient::ClientUpdate()
 				SetMousePos(vec2(i * 32, j * 32));
 			}
 		}
-	}
+	} */
+
+	int id = GetNearestTee();
+	pos = m_aClients[id].m_Predicted.m_Pos;
+
+	if(m_LocalCharacterPos.x < pos.x)
+		Right();
+	if(m_LocalCharacterPos.x > pos.x)
+		Left();
 }
 
 void CGameClient::OnUpdate()
